@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pay {{ order.order_id }}</title>
+<style>
+:root {
+  --bg-page: #f6f8f3;
+  --card-bg: #ffffff;
+  --primary-olive: #556b2f;
+  --primary-dark: #435524;
+  --olive-surface: #f1f5eb;
+  --olive-border: #dde4d4;
+  --text-main: #1e2617;
+  --text-muted: #5e6b54;
+  --shadow-card: 0 16px 40px -8px rgba(60, 75, 45, 0.12), 0 4px 12px rgba(60, 75, 45, 0.04);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg-page);
+  color: var(--text-main);
+  font: 16px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 20px;
+}
+main {
+  width: min(480px, 92vw);
+  background: var(--card-bg);
+  padding: 32px 28px;
+  border-radius: 20px;
+  border: 1px solid var(--olive-border);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+.muted {
+  color: var(--text-muted);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+h2 {
+  margin: 6px 0 14px;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--primary-dark);
+  background: var(--olive-surface);
+  border: 1px solid var(--olive-border);
+  padding: 6px 14px;
+  border-radius: 8px;
+  display: inline-block;
+}
+.amount {
+  font-size: 38px;
+  font-weight: 800;
+  margin: 8px 0 16px;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
+.detail {
+  padding: 14px 16px;
+  background: var(--olive-surface);
+  border: 1px solid var(--olive-border);
+  border-radius: 12px;
+  margin: 14px 0;
+  overflow-wrap: anywhere;
+  text-align: left;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text-main);
+}
+.detail b {
+  color: var(--primary-dark);
+}
+.qr {
+  display: block;
+  width: 220px;
+  height: 220px;
+  max-width: 100%;
+  margin: 16px auto;
+  border: 1.5px solid var(--olive-border);
+  border-radius: 14px;
+  padding: 10px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(60, 75, 45, 0.06);
+}
+.pay {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--primary-olive);
+  color: #ffffff;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 16px;
+  margin-top: 16px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
+  box-shadow: 0 3px 10px rgba(85, 107, 47, 0.22);
+}
+.pay:hover {
+  background: var(--primary-dark);
+}
+.pay:active {
+  transform: scale(0.99);
+}
+button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 1.5px solid var(--primary-olive);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--primary-olive);
+  text-align: center;
+  font-weight: 700;
+  font-size: 15px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+button:hover {
+  background: var(--olive-surface);
+  border-color: var(--primary-dark);
+  color: var(--primary-dark);
+}
+button:active {
+  transform: scale(0.99);
+}
+#status {
+  font-weight: 700;
+  font-size: 14.5px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f5f7eb;
+  border: 1px solid #dfe5cd;
+  color: var(--primary-dark);
+  margin-top: 16px;
+  transition: all 0.2s ease;
+}
+#timer {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  color: var(--primary-dark);
+  background: var(--olive-surface);
+  border: 1px solid var(--olive-border);
+  padding: 2px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  margin: 0 2px;
+}
+</style>
+</head>
+<body>
+<main>
+<div class="muted">Payment order</div>
+<h2>{{ order.order_id }}</h2>
+<div class="amount">₹{{ amount }}</div>
+<div class="detail"><b>Payee:</b> {{ payee_name }}<br><b>UPI ID:</b> {{ upi_id }}</div>
+<p class="muted">Scan this QR or open your UPI app. The QR contains the exact order amount and order ID.</p>
+<img class="qr" src="/api/orders/{{ order.order_id }}/qr" alt="UPI payment QR code" />
+<a class="pay" href="{{ upi_link }}">Open UPI app</a>
+<button type="button" onclick="copyUpi(this)">Copy UPI ID</button>
+<div id="status">Payment status: Processing</div>
+<p class="muted">This order expires in <span id="timer">5:00</span>. The page checks status every 30 seconds.</p>
+<script>
+const orderId = {{ order.order_id|tojson }};
+const expiresAtRaw = {{ (order.expires_at or '')|tojson }};
+let expireTimestamp = expiresAtRaw ? new Date(expiresAtRaw).getTime() : (Date.now() + 5 * 60 * 1000);
+
+const timerEl = document.getElementById('timer');
+const statusEl = document.getElementById('status');
+let timerInterval = null;
+
+function formatTime(totalSeconds) {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+function updateTimer() {
+  const now = Date.now();
+  const remaining = Math.max(0, Math.floor((expireTimestamp - now) / 1000));
+  if (timerEl) {
+    timerEl.textContent = formatTime(remaining);
+  }
+  if (remaining <= 0) {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    check();
+  }
+}
+
+updateTimer();
+timerInterval = setInterval(updateTimer, 1000);
+
+async function check() {
+  try {
+    const r = await fetch('/api/orders/' + encodeURIComponent(orderId));
+    const d = await r.json();
+    if (!r.ok) {
+      statusEl.textContent = 'Unable to check payment status';
+      return;
+    }
+    if (d.expires_at) {
+      const serverExpiry = new Date(d.expires_at).getTime();
+      if (!isNaN(serverExpiry) && Math.abs(serverExpiry - expireTimestamp) > 1000) {
+        expireTimestamp = serverExpiry;
+        updateTimer();
+      }
+    }
+    if (d.status === 'success') {
+      statusEl.textContent = 'Payment successful';
+      statusEl.style.background = '#edf6ee';
+      statusEl.style.borderColor = '#c4dfc5';
+      statusEl.style.color = '#206629';
+      if (timerInterval) clearInterval(timerInterval);
+    } else if (d.status === 'failed') {
+      statusEl.textContent = 'Payment marked failed';
+      statusEl.style.background = '#fdf2f0';
+      statusEl.style.borderColor = '#f5cdc9';
+      statusEl.style.color = '#a12323';
+      if (timerInterval) clearInterval(timerInterval);
+    } else if (d.status === 'expired') {
+      statusEl.textContent = 'Order expired';
+      statusEl.style.background = '#fdf2f0';
+      statusEl.style.borderColor = '#f5cdc9';
+      statusEl.style.color = '#a12323';
+      if (timerEl) timerEl.textContent = '0:00';
+      if (timerInterval) clearInterval(timerInterval);
+    } else if (d.status === 'pending_review') {
+      statusEl.textContent = 'Bank alert received — payment verification in progress';
+      statusEl.style.background = '#fbf8ea';
+      statusEl.style.borderColor = '#e7deba';
+      statusEl.style.color = '#685715';
+    } else {
+      statusEl.textContent = 'Payment status: ' + (d.status.charAt(0).toUpperCase() + d.status.slice(1));
+    }
+  } catch (e) {}
+}
+
+check();
+setInterval(check, 30000);
+
+function copyUpi(btn) {
+  const upi = {{ upi_id|tojson }};
+  const original = btn ? btn.textContent : 'Copy UPI ID';
+  const showFeedback = () => {
+    if (btn) {
+      btn.textContent = 'Copied!';
+      btn.style.background = 'var(--olive-surface)';
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.style.background = '';
+      }, 2000);
+    }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(upi).then(showFeedback).catch(() => {
+      fallbackCopy(upi);
+      showFeedback();
+    });
+  } else {
+    fallbackCopy(upi);
+    showFeedback();
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+}
+</script>
+</main>
+</body>
+</html>
